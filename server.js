@@ -9,5 +9,5 @@ mongoose.connect(DB_HOST).then(()=>{
   app.listen(3001)
 }).catch((error)=>{
 console.log(error.message);
-process.exist(1)
+process.exit(1)
 })

@@ -7,6 +7,7 @@ const getMedData = async (req, res)=>{
     if (!data) {
         throw HTTPError(404, "Not Faund")
     }
+    
     res.json(data)
 }
 export default getMedData

@@ -6,7 +6,8 @@ import jwt from "jsonwebtoken";
 
 export const autorization = async (req, res, next) => {
     const { authorization } = req.headers;
-
+    // console.log("req.headers:", req.headers,"rec.body:", req.body);
+    
     if (!authorization) {
         throw HTTPError(401, "Unauthorized");
     }
