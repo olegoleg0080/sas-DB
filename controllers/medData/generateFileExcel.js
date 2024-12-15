@@ -30,16 +30,11 @@ const generateFilteredExcel = async (req, res) => {
     });
 
     // Создание временного файла
-    const filePath = path.join(__dirname, "temp", `filtered_students_${Date.now()}.xlsx`);
+    const filePath = path.join("temp", `filtered_students_${Date.now()}.xlsx`);
     await workbook.xlsx.writeFile(filePath);
 
     // Отправка файла
-    res.sendFile(filePath, { 
-        headers: {
-            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition': `attachment; filename=${path.basename(filePath)}`
-        }
-    }, (err) => {
+    res.download(filePath, (err) => {
         // Удаление временного файла после отправки
         fs.unlinkSync(filePath);
         if (err) {
