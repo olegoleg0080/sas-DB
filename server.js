@@ -2,6 +2,8 @@ import app from "./app.js";
 import mongoose from "mongoose";
 
 const {DB_HOST} = process.env
+console.log(process.env);
+
 console.log(DB_HOST);
 
 mongoose.connect(DB_HOST).then(()=>{
