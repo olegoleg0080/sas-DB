@@ -29,8 +29,14 @@ const generateFilteredExcel = async (req, res) => {
         worksheet.addRow(student._doc);
     });
 
-    // Создание временного файла
+    // Создание временного файла в папке temp
     const filePath = path.join("temp", `filtered_students_${Date.now()}.xlsx`);
+    
+    // Проверка, если папки temp нет, создаем её
+    if (!fs.existsSync("temp")) {
+        fs.mkdirSync("temp");
+    }
+
     await workbook.xlsx.writeFile(filePath);
 
     // Отправка файла
