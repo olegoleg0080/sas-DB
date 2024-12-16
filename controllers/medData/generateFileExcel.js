@@ -97,6 +97,18 @@ const generateFilteredExcel = async (req, res) => {
         worksheet.addRow(row);
     });
 
+    // Добавляем границы для всех заполненных ячеек
+    worksheet.eachRow((row) => {
+        row.eachCell((cell) => {
+            cell.border = {
+                top: { style: 'thin', color: { argb: 'FF000000' } },
+                left: { style: 'thin', color: { argb: 'FF000000' } },
+                bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                right: { style: 'thin', color: { argb: 'FF000000' } },
+            };
+        });
+    });
+
     // Указываем путь для папки temp
     const tempDir = "./temp";
     if (!fs.existsSync(tempDir)) {
