@@ -9,6 +9,8 @@ const generateFilteredExcel = async (req, res) => {
 
     // Шаг 1: Получаем данные с фильтрацией
     const students = await Student.find({ [filterKey]: filterValue });
+    console.log(students);
+    
     if (!students.length) {
         throw HTTPError(404, "No data found for the provided filter");
     }
