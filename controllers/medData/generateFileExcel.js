@@ -18,7 +18,7 @@ const generateFilteredExcel = async (req, res) => {
     // Шаг 2: Группируем по параллели и классу
     const groupedData = {};
     students.forEach((item) => {
-        const classKey = `${item.parallel}-${item.class}`;
+        const classKey = `${item.paralel}-${item.class}`;
         if (!groupedData[classKey]) {
             groupedData[classKey] = [];
         }
