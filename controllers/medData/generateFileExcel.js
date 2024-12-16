@@ -8,7 +8,16 @@ const generateFilteredExcel = async (req, res) => {
     const { filterKey, filterValue } = req.params;  // Получаем фильтр из параметров запроса
 
     // Получаем данные с фильтрацией из MongoDB
-    const students = await Student.find({ [filterKey]: filterValue });
+    let students = await Student.find({ [filterKey]: filterValue });
+    
+    // Преобразуем ObjectId в строку
+    students = students.map(student => {
+        return {
+            ...student.toObject(),
+            _id: student._id.toString()  // Преобразуем ObjectId в строку
+        };
+    });
+
     console.log("students:", students);
     
     if (!students.length) {
