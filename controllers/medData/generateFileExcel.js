@@ -9,7 +9,8 @@ const generateFilteredExcel = async (req, res) => {
 
     // Получаем данные с фильтрацией из MongoDB
     const students = await Student.find({ [filterKey]: filterValue });
-
+    console.log("students:", students);
+    
     if (!students.length) {
         throw HTTPError(404, "No data found for the provided filter");
     }
@@ -49,8 +50,8 @@ const generateFilteredExcel = async (req, res) => {
     const worksheet = workbook.addWorksheet("Filtered Data");
 
     worksheet.columns = [
-        { header: "Class 1", key: "class1", width: 25 },
-        { header: "Class 2", key: "class2", width: 25 },
+        { key: "class1", width: 25 },
+        { key: "class2", width: 25 },
     ];
 
     result.forEach((row) => {
