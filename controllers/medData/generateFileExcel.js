@@ -23,53 +23,53 @@ const generateFilteredExcel = async (req, res) => {
         groupedData[classKey].push(item.name);
     });
 
-    // Шаг 3: Преобразуем данные в формат для Excel
+    // Шаг 3: Подготавливаем данные для Excel
     const result = [];
     const classKeys = Object.keys(groupedData);
 
     for (let i = 0; i < classKeys.length; i += 2) {
-        const classKey1 = classKeys[i];
-        const classKey2 = classKeys[i + 1];
+        const classKey1 = classKeys[i]; // Заголовок первой колонки
+        const classKey2 = classKeys[i + 1]; // Заголовок второй колонки (если есть)
 
         const names1 = groupedData[classKey1] || [];
         const names2 = groupedData[classKey2] || [];
 
         const maxLength = Math.max(names1.length, names2.length);
 
-        // Заполняем массивы имен до одинаковой длины
-        const paddedNames1 = [...names1, ...Array(maxLength - names1.length).fill("")];
-        const paddedNames2 = [...names2, ...Array(maxLength - names2.length).fill("")];
-
-        // Добавляем заголовок классов
+        // Добавляем заголовки классов
         result.push([classKey1 || "", classKey2 || ""]);
 
-        // Добавляем строки с именами
+        // Добавляем имена учеников
         for (let j = 0; j < maxLength; j++) {
-            result.push([paddedNames1[j], paddedNames2[j]]);
+            result.push([
+                names1[j] || "", // Имя для первого класса
+                names2[j] || ""  // Имя для второго класса
+            ]);
         }
     }
 
-    // Шаг 4: Создаем Excel-файл
+    // Шаг 4: Создание Excel-файла
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Filtered Data");
 
-    worksheet.columns = [
-        { header: "Class 1", key: "class1", width: 25 },
-        { header: "Class 2", key: "class2", width: 25 },
-    ];
-
-    // Добавляем данные в Excel
+    // Добавляем данные в лист
     result.forEach((row) => {
         worksheet.addRow(row);
     });
 
-    // Шаг 5: Создаем временный файл
+    // Устанавливаем ширину колонок
+    worksheet.columns = [
+        { width: 25 },
+        { width: 25 },
+    ];
+
+    // Шаг 5: Создание временного файла
     const filePath = path.join("temp", `filtered_data_${Date.now()}.xlsx`);
     await workbook.xlsx.writeFile(filePath);
 
-    // Шаг 6: Отправляем файл клиенту
+    // Шаг 6: Отправка файла клиенту
     res.download(filePath, (err) => {
-        fs.unlinkSync(filePath); // Удаляем временный файл
+        fs.unlinkSync(filePath); // Удаление временного файла после скачивания
         if (err) {
             throw HTTPError(500, "Error downloading the file");
         }
