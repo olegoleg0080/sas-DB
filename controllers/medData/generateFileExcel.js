@@ -5,7 +5,7 @@ import fs from "fs";  // Модуль для работы с файловой с
 import path from "path";  // Модуль для работы с путями
 
 const generateFilteredExcel = async (req, res) => {
-    const { filterKey, filterValue, specificClass = All } = req.params;  // Получаем параметры из запроса
+    const { filterKey, filterValue, specificClass = "All" } = req.params;  // Получаем параметры из запроса
 
     // Получаем данные с фильтрацией из MongoDB
     let students = await Student.find({ [filterKey]: filterValue });
