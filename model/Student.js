@@ -25,6 +25,9 @@ const MedDataSchema = new Schema(
             required: true,
             enum: ["vac1", "vac2"],
         },
+        term:{
+            type: String,
+        }
     },
     { versionKey: false }
 );
