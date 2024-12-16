@@ -13,7 +13,7 @@ const generateFilteredExcel = async (req, res) => {
         throw HTTPError(404, "No data found for the provided filter");
     }
 
-    // Группируем данные
+    // Шаг 1: Группируем данные по параллели и классу
     const groupedData = {};
     students.forEach((item) => {
         const classKey = `${item.parallel}-${item.class}`;
@@ -23,7 +23,7 @@ const generateFilteredExcel = async (req, res) => {
         groupedData[classKey].push(item.name);
     });
 
-    // Формируем данные для Excel
+    // Шаг 2: Подготавливаем данные для Excel в две колонки
     const result = [];
     const classKeys = Object.keys(groupedData);
 
@@ -36,35 +36,38 @@ const generateFilteredExcel = async (req, res) => {
 
         const maxLength = Math.max(names1.length, names2.length);
 
-        // Заполняем массивы имен до одинаковой длины
-        const paddedNames1 = [...names1, ...Array(maxLength - names1.length).fill("")];
-        const paddedNames2 = [...names2, ...Array(maxLength - names2.length).fill("")];
+        // Добавляем заголовок классов
+        result.push([classKey1 || "", classKey2 || ""]);
 
-        // Добавляем строки в результат
-        result.push([classKey1, classKey2 || ""]);
+        // Заполняем имена учеников для обоих классов
         for (let j = 0; j < maxLength; j++) {
-            result.push([paddedNames1[j], paddedNames2[j]]);
+            const name1 = names1[j] || "";
+            const name2 = names2[j] || "";
+            result.push([name1, name2]);
         }
     }
 
-    // Создание Excel-файла
+    // Шаг 3: Создание Excel-файла
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Filtered Data");
 
-    result.forEach((row) => worksheet.addRow(row));
+    // Устанавливаем ширину колонок и добавляем строки
     worksheet.columns = [
         { header: "Class 1", key: "class1", width: 25 },
         { header: "Class 2", key: "class2", width: 25 },
     ];
 
-    // Создание временного файла
+    result.forEach((row) => {
+        worksheet.addRow(row);
+    });
+
+    // Шаг 4: Создание временного файла
     const filePath = path.join("temp", `filtered_data_${Date.now()}.xlsx`);
     await workbook.xlsx.writeFile(filePath);
 
-    // Отправка файла
+    // Шаг 5: Отправка файла клиенту
     res.download(filePath, (err) => {
-        // Удаление временного файла после отправки
-        fs.unlinkSync(filePath);
+        fs.unlinkSync(filePath); // Удаление файла после скачивания
         if (err) {
             throw HTTPError(500, "Error downloading the file");
         }
