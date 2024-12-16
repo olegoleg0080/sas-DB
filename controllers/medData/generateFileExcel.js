@@ -5,10 +5,18 @@ import fs from "fs"; // Модуль для работы с файловой с�
 import path from "path"; // Модуль для работы с путями
 
 const generateFilteredExcel = async (req, res) => {
-    const { filterKey, filterValue, specificClass = "All" } = req.params; // Получаем параметры из запроса
+    const { filterKey = "All", filterValue = "All", specificClass = "All" } = req.params; // Получаем параметры из запроса
 
-    // Получаем данные с фильтрацией из MongoDB
-    let students = await Student.find({ [filterKey]: filterValue });
+    // Если filterValue или filterKey равен "All", то не применяем фильтрацию по этим параметрам
+    let students;
+
+    if (filterKey === "All" || filterValue === "All") {
+        // Получаем всех студентов, если фильтры "All"
+        students = await Student.find();
+    } else {
+        // Применяем фильтрацию по переданным параметрам
+        students = await Student.find({ [filterKey]: filterValue });
+    }
 
     // Преобразуем ObjectId в строку
     students = students.map(student => {
@@ -45,10 +53,6 @@ const generateFilteredExcel = async (req, res) => {
     }
 
     console.log("students after specific class filtering:", students);
-
-    if (!students.length) {
-        throw HTTPError(404, "No data found for the specified class");
-    }
 
     // Шаг 1: Группируем данные по параллели и классу
     const groupedData = {};
@@ -115,3 +119,4 @@ const generateFilteredExcel = async (req, res) => {
 };
 
 export default generateFilteredExcel;
+
