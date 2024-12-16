@@ -5,7 +5,7 @@ import fs from "fs";  // Модуль для работы с файловой с
 import path from "path";  // Модуль для работы с путями
 
 const generateFilteredExcel = async (req, res) => {
-    const { filterKey, filterValue } = req.params;  // Получаем фильтр из параметров запроса
+    const { filterKey, filterValue, specificClass = All } = req.params;  // Получаем параметры из запроса
 
     // Получаем данные с фильтрацией из MongoDB
     let students = await Student.find({ [filterKey]: filterValue });
@@ -18,10 +18,24 @@ const generateFilteredExcel = async (req, res) => {
         };
     });
 
-    console.log("students:", students);
-    
+    console.log("students before specific class filtering:", students);
+
     if (!students.length) {
         throw HTTPError(404, "No data found for the provided filter");
+    }
+
+    // Фильтруем данные по конкретному классу, если параметр `specificClass` задан
+    if (specificClass !== "All") {
+        const [parallel, className] = specificClass.split("-"); // Разбиваем строку на параллель и класс
+        students = students.filter(student => 
+            student.parallel === Number(parallel) && student.class === className
+        );
+    }
+
+    console.log("students after specific class filtering:", students);
+
+    if (!students.length) {
+        throw HTTPError(404, "No data found for the specified class");
     }
 
     // Шаг 1: Группируем данные по параллели и классу
