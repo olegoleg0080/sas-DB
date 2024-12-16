@@ -89,8 +89,8 @@ const generateFilteredExcel = async (req, res) => {
     const worksheet = workbook.addWorksheet("Filtered Data");
 
     worksheet.columns = [
-        { key: "class1", width: 25 },
-        { key: "class2", width: 25 },
+        { key: "class1", width: 50 },
+        { key: "class2", width: 50 },
     ];
 
     result.forEach(row => {
