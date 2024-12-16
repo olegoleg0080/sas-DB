@@ -1,20 +1,20 @@
-import { Student } from "../../model/Student.js";  // Импорт модели для работы с MongoDB
-import { HTTPError } from "../../helpers/index.js";  // Ошибки для обработки
-import ExcelJS from "exceljs";  // Модуль для работы с Excel
-import fs from "fs";  // Модуль для работы с файловой системой
-import path from "path";  // Модуль для работы с путями
+import { Student } from "../../model/Student.js"; // Импорт модели для работы с MongoDB
+import { HTTPError } from "../../helpers/index.js"; // Ошибки для обработки
+import ExcelJS from "exceljs"; // Модуль для работы с Excel
+import fs from "fs"; // Модуль для работы с файловой системой
+import path from "path"; // Модуль для работы с путями
 
 const generateFilteredExcel = async (req, res) => {
-    const { filterKey, filterValue, specificClass = "All" } = req.params;  // Получаем параметры из запроса
+    const { filterKey, filterValue, specificClass = "All" } = req.params; // Получаем параметры из запроса
 
     // Получаем данные с фильтрацией из MongoDB
     let students = await Student.find({ [filterKey]: filterValue });
-    
+
     // Преобразуем ObjectId в строку
     students = students.map(student => {
         return {
             ...student.toObject(),
-            _id: student._id.toString()  // Преобразуем ObjectId в строку
+            _id: student._id.toString(), // Преобразуем ObjectId в строку
         };
     });
 
@@ -26,10 +26,22 @@ const generateFilteredExcel = async (req, res) => {
 
     // Фильтруем данные по конкретному классу, если параметр `specificClass` задан
     if (specificClass !== "All") {
-        const [parallel, className] = specificClass.split("-"); // Разбиваем строку на параллель и класс
-        students = students.filter(student => 
-            student.parallel === Number(parallel) && student.class === className
+        const [parallel, className] = specificClass.split("-");
+        console.log("specificClass:", specificClass);
+        console.log("parallel:", parallel);
+        console.log("className:", className);
+
+        // Фильтрация по параллели и классу
+        students = students.filter(
+            student =>
+                String(student.parallel) === parallel &&
+                student.class === className
         );
+    }
+
+    // Проверка, если данные отсутствуют после фильтрации
+    if (!students.length) {
+        throw HTTPError(404, "No data found for the specified class");
     }
 
     console.log("students after specific class filtering:", students);
@@ -40,7 +52,7 @@ const generateFilteredExcel = async (req, res) => {
 
     // Шаг 1: Группируем данные по параллели и классу
     const groupedData = {};
-    students.forEach((item) => {
+    students.forEach(item => {
         const classKey = `${item.parallel}-${item.class}`;
         if (!groupedData[classKey]) {
             groupedData[classKey] = [];
@@ -77,7 +89,7 @@ const generateFilteredExcel = async (req, res) => {
         { key: "class2", width: 25 },
     ];
 
-    result.forEach((row) => {
+    result.forEach(row => {
         worksheet.addRow(row);
     });
 
@@ -92,7 +104,7 @@ const generateFilteredExcel = async (req, res) => {
     await workbook.xlsx.writeFile(filePath);
 
     // Шаг 4: Отправка файла клиенту
-    res.download(filePath, (err) => {
+    res.download(filePath, err => {
         if (err) {
             throw HTTPError(500, "Error downloading the file");
         }
