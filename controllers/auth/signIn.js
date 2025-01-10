@@ -17,7 +17,8 @@ const signin = async (req, res) => {
     if (!isPasswordCorrect) {
         throw HTTPError(401, "Email or password invalid");
     }
-
+    console.log(user);
+    
     // Проверяем, есть ли у пользователя токен
     const existingToken = user.token;
 
