@@ -1,60 +1,46 @@
-import { Student } from "../../model/Student.js"; // Импорт модели для работы с MongoDB
-import { HTTPError } from "../../helpers/index.js"; // Ошибки для обработки
-import ExcelJS from "exceljs"; // Модуль для работы с Excel
-import fs from "fs"; // Модуль для работы с файловой системой
-import path from "path"; // Модуль для работы с путями
+import { Student } from "../../model/Student.js";
+import { HTTPError } from "../../helpers/index.js";
+import ExcelJS from "exceljs";
+import fs from "fs";
+import path from "path";
+
+const groupMapping = {
+    group1: "Основна",
+    group2: "Підготовча",
+    group3: "Спеціальна",
+    group4: "Звільнений",
+};
 
 const generateFilteredExcel = async (req, res) => {
-    const { filterKey = "All", filterValue = "All", specificClass = "All" } = req.params; // Получаем параметры из запроса
+    const { filterKey = "All", filterValue = "All", specificClass = "All" } = req.params;
 
-    // Если filterValue или filterKey равен "All", то не применяем фильтрацию по этим параметрам
     let students;
-
     if (filterKey === "All" || filterValue === "All") {
-        // Получаем всех студентов, если фильтры "All"
         students = await Student.find();
     } else {
-        // Применяем фильтрацию по переданным параметрам
         students = await Student.find({ [filterKey]: filterValue });
     }
 
-    // Преобразуем ObjectId в строку
-    students = students.map(student => {
-        return {
-            ...student.toObject(),
-            _id: student._id.toString(), // Преобразуем ObjectId в строку
-        };
-    });
-
-    console.log("students before specific class filtering:", students);
+    students = students.map(student => ({
+        ...student.toObject(),
+        _id: student._id.toString(),
+    }));
 
     if (!students.length) {
         throw HTTPError(404, "No data found for the provided filter");
     }
 
-    // Фильтруем данные по конкретному классу, если параметр `specificClass` задан
     if (specificClass !== "All") {
         const [parallel, className] = specificClass.split("-");
-        console.log("specificClass:", specificClass);
-        console.log("parallel:", parallel);
-        console.log("className:", className);
-
-        // Фильтрация по параллели и классу
-        students = students.filter(
-            student =>
-                String(student.parallel) === parallel &&
-                student.class === className
+        students = students.filter(student =>
+            String(student.parallel) === parallel && student.class === className
         );
     }
 
-    // Проверка, если данные отсутствуют после фильтрации
     if (!students.length) {
         throw HTTPError(404, "No data found for the specified class");
     }
 
-    console.log("students after specific class filtering:", students);
-
-    // Шаг 1: Группируем данные по параллели и классу
     const groupedData = {};
     students.forEach(item => {
         const classKey = `${item.parallel}-${item.class}`;
@@ -64,71 +50,74 @@ const generateFilteredExcel = async (req, res) => {
         groupedData[classKey].push(item.name);
     });
 
-    // Шаг 2: Подготавливаем данные для Excel в две колонки
-    const result = [];
-    const classKeys = Object.keys(groupedData);
-
-    for (let i = 0; i < classKeys.length; i += 2) {
-        const classKey1 = classKeys[i];
-        const classKey2 = classKeys[i + 1];
-
-        const names1 = groupedData[classKey1] || [];
-        const names2 = groupedData[classKey2] || [];
-
-        const maxLength = Math.max(names1.length, names2.length);
-
-        result.push([classKey1 || "", classKey2 || ""]);
-
-        for (let j = 0; j < maxLength; j++) {
-            result.push([names1[j] || "", names2[j] || ""]);
-        }
-    }
-
-    // Шаг 3: Создание Excel-файла
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Filtered Data");
 
-    worksheet.columns = [
-        { key: "class1", width: 50 },
-        { key: "class2", width: 50 },
-    ];
+    const headerText = filterKey === "group" ? `Група з фізкультури: ${groupMapping[filterValue] || "Невідомо"}` :
+        filterKey === "vac" ? (filterValue === "yes" ? "Усі необхідні щеплення наявні" : "Необхідні щеплення відсутні") : "";
 
-    result.forEach(row => {
-        worksheet.addRow(row);
-    });
+    worksheet.mergeCells("A1:D1");
+    worksheet.getCell("A1").value = headerText;
+    worksheet.getCell("A1").alignment = { horizontal: "center", vertical: "middle" };
+    worksheet.getCell("A1").font = { bold: true };
 
-    // Добавляем границы для всех заполненных ячеек
-    worksheet.eachRow((row) => {
-        row.eachCell((cell) => {
-            cell.border = {
-                top: { style: 'thin', color: { argb: 'FF000000' } },
-                left: { style: 'thin', color: { argb: 'FF000000' } },
-                bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                right: { style: 'thin', color: { argb: 'FF000000' } },
-            };
+    worksheet.addRow(["", "ПІБ учня", "", "ПІБ учня"]);
+    worksheet.getRow(2).font = { bold: true };
+    worksheet.getRow(2).alignment = { horizontal: "center", vertical: "middle" };
+
+    const classKeys = Object.keys(groupedData);
+    classKeys.forEach(classKey => {
+        const names = groupedData[classKey] || [];
+        worksheet.addRow([classKey, "", classKey, ""]).font = { bold: true };
+        names.forEach((name, index) => {
+            const row = worksheet.addRow([index + 1, name, index + 1, names[index + 1] || ""]);
+            row.height = 30;
+            row.alignment = { vertical: "middle" };
         });
     });
 
-    // Указываем путь для папки temp
+    worksheet.columns = [
+        { key: "number1", width: 4 },
+        { key: "name1", width: 39 },
+        { key: "number2", width: 4 },
+        { key: "name2", width: 39 },
+    ];
+
+    worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 2) {
+            row.eachCell((cell, colNumber) => {
+                cell.alignment = { wrapText: true, vertical: "middle" };
+                if (colNumber % 2 === 1) {
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                    };
+                } else {
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FF000000' } },
+                    };
+                }
+            });
+        }
+    });
+
     const tempDir = "./temp";
     if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir);
     }
 
-    // Указываем путь для файла
     const filePath = path.join(tempDir, `filtered_data_${Date.now()}.xlsx`);
     await workbook.xlsx.writeFile(filePath);
 
-    // Шаг 4: Отправка файла клиенту
     res.download(filePath, err => {
         if (err) {
             throw HTTPError(500, "Error downloading the file");
         }
-
-        // Удаляем файл после отправки
         fs.unlinkSync(filePath);
     });
 };
 
 export default generateFilteredExcel;
-

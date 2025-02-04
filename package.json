@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --env-file=.env server",
-    "start": "node server.js"
+    "start": "node --env-file=.env server server.js"
   },
   "author": "oleg",
   "license": "ISC",
