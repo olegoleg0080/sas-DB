@@ -50,6 +50,11 @@ const generateFilteredExcel = async (req, res) => {
         groupedData[classKey].push(item.name);
     });
 
+    const classKeys = Object.keys(groupedData);
+    if (!classKeys.length) {
+        throw HTTPError(404, "No data to generate Excel");
+    }
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Filtered Data");
 
@@ -61,20 +66,26 @@ const generateFilteredExcel = async (req, res) => {
     worksheet.getCell("A1").alignment = { horizontal: "center", vertical: "middle" };
     worksheet.getCell("A1").font = { bold: true };
 
-    worksheet.addRow(["", "ПІБ учня", "", "ПІБ учня"]);
+    worksheet.addRow(["Клас", "ПІБ учня", "Клас", "ПІБ учня"]);
     worksheet.getRow(2).font = { bold: true };
     worksheet.getRow(2).alignment = { horizontal: "center", vertical: "middle" };
 
-    const classKeys = Object.keys(groupedData);
-    classKeys.forEach(classKey => {
-        const names = groupedData[classKey] || [];
-        worksheet.addRow([classKey, "", classKey, ""]).font = { bold: true };
-        names.forEach((name, index) => {
-            const row = worksheet.addRow([index + 1, name, index + 1, names[index + 1] || ""]);
-            row.height = 30;
-            row.alignment = { vertical: "middle" };
-        });
-    });
+    for (let i = 0; i < classKeys.length; i += 2) {
+        const leftClassKey = classKeys[i];
+        const rightClassKey = classKeys[i + 1];
+
+        const leftNames = groupedData[leftClassKey] || [];
+        const rightNames = rightClassKey ? groupedData[rightClassKey] : [];
+
+        const maxLength = Math.max(leftNames.length, rightNames.length);
+
+        worksheet.addRow([leftClassKey, "", rightClassKey || "", ""]).font = { bold: true };
+        for (let j = 0; j < maxLength; j++) {
+            worksheet.addRow([
+                j + 1, leftNames[j] || "", j + 1, rightNames[j] || ""
+            ]);
+        }
+    }
 
     worksheet.columns = [
         { key: "number1", width: 4 },
@@ -87,19 +98,12 @@ const generateFilteredExcel = async (req, res) => {
         if (rowNumber > 2) {
             row.eachCell((cell, colNumber) => {
                 cell.alignment = { wrapText: true, vertical: "middle" };
-                if (colNumber % 2 === 1) {
-                    cell.border = {
-                        top: { style: 'thin', color: { argb: 'FF000000' } },
-                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                    };
-                } else {
-                    cell.border = {
-                        top: { style: 'thin', color: { argb: 'FF000000' } },
-                        left: { style: 'thin', color: { argb: 'FF000000' } },
-                        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                        right: { style: 'thin', color: { argb: 'FF000000' } },
-                    };
-                }
+                cell.border = {
+                    top: { style: 'thin', color: { argb: 'FF000000' } },
+                    left: { style: 'thin', color: { argb: 'FF000000' } },
+                    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                    right: { style: 'thin', color: { argb: 'FF000000' } },
+                };
             });
         }
     });
