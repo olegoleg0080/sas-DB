@@ -22,6 +22,10 @@ const authSchema = new Schema({
     token:{
         type:String,
         default:""
+    },
+    schoolId:{
+        type: String,
+        required: [true, "School id must be"],
     }
 }, {versionKey: false, timestamps: true});
 

@@ -27,11 +27,15 @@ const MedDataSchema = new Schema(
         vac: {
             type: String,
             required: true,
-            enum: ["vac1", "vac2"],
+            enum: ["yes", "no"],
         },
         term:{
             type: String,
-        }
+        },
+        
+        schoolId:{
+            type: String,
+}
     },
     { versionKey: false }
 );

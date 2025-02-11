@@ -1,11 +1,18 @@
 import ctrlWrapper from "../decorators/ctrlWrapper.js";
 import { HTTPError } from "../helpers/index.js";
 import { User } from "../model/User.js";
-const { JWT_SECRET } = process.env;
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
+
+const { JWT_SECRET } = process.env;
+
+
 
 export const autorization = async (req, res, next) => {
     const { authorization } = req.headers;
+    console.log("req.headers:", req.headers);
+    
     // console.log("req.headers:", req.headers,"rec.body:", req.body);
     
     if (!authorization) {
@@ -16,9 +23,13 @@ export const autorization = async (req, res, next) => {
         throw HTTPError(401, "Autorization header mus b 'Bearer'");
     }
     try {
+        console.log("token:", token);
+        
         const { id } = jwt.verify(token, JWT_SECRET);
 
         const user = await User.findById(id);
+        console.log("user:", user);
+        
         if (!user || !user.token || user.token !== token) {
             // console.log(user.token === token);
 
